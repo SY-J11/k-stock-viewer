@@ -1,14 +1,70 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>국내주식 조회</title>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>국내주식 종목 조회</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:#17191c}.wrap{max-width:700px;margin:auto;padding:24px 15px 40px}h1{font-size:25px;margin:4px 0 6px}.sub{font-size:14px;color:#777;margin-bottom:18px}.search{display:flex;gap:8px}input{flex:1;min-width:0;border:1px solid #ddd;border-radius:12px;padding:14px;font-size:16px;background:#fff}button{border:0;border-radius:12px;background:#111;color:#fff;font-weight:700;padding:0 18px;font-size:16px}.card{background:#fff;border-radius:18px;padding:20px;margin-top:16px;box-shadow:0 3px 14px #0000000d}.name{font-size:21px;font-weight:800}.code{color:#888;font-size:13px;margin-top:3px}.price{font-size:30px;font-weight:800;margin-top:18px}.change{font-size:14px;color:#666;margin-top:4px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.item{background:#f7f8fa;border-radius:12px;padding:14px}.label{font-size:13px;color:#777;margin-bottom:7px}.value{font-size:17px;font-weight:700;word-break:break-word}.error{margin-top:15px;background:#fff0f2;color:#a00020;border-radius:12px;padding:14px;font-size:14px}
-</style></head><body><div class="wrap"><h1>국내주식 종목 조회</h1><div class="sub">종목명 또는 6자리 종목코드를 입력하세요.</div>
-<form class="search" id="f"><input id="q" placeholder="예: 삼성전자 또는 005930"><button>조회</button></form><div id="r"></div></div>
+*{box-sizing:border-box}body{margin:0;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111}
+.wrap{max-width:560px;margin:0 auto;padding:24px 16px}
+h1{font-size:24px;margin:0 0 18px}
+.search{display:flex;gap:8px}
+input{flex:1;min-width:0;padding:14px;border:1px solid #d7dbe0;border-radius:12px;font-size:16px;background:#fff}
+button{padding:0 18px;border:0;border-radius:12px;background:#111;color:#fff;font-size:16px;font-weight:700}
+.card{margin-top:16px;background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.name{font-size:20px;font-weight:800}.code{color:#777;font-size:13px;margin-top:4px}
+.price{font-size:32px;font-weight:900;margin-top:16px}.change{margin-top:4px;font-size:15px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.item{background:#f7f8fa;border-radius:12px;padding:13px}.label{font-size:12px;color:#777}.value{font-size:16px;font-weight:700;margin-top:5px;word-break:break-word}
+.multi{grid-column:1/-1;background:#eef5ff}.multi .value{font-size:22px}
+.note{font-size:12px;color:#777;margin-top:14px;line-height:1.5}
+.err{margin-top:16px;color:#c00}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>국내주식 종목 조회</h1>
+<div class="search">
+<input id="q" placeholder="종목명 또는 6자리 코드" value="삼성전자">
+<button onclick="loadStock()">조회</button>
+</div>
+<div id="result"></div>
+</div>
 <script>
-const $=x=>document.getElementById(x),v=(x,s="")=>(x===null||x===undefined||x==="")?"-":x+s;
-$("f").onsubmit=async e=>{e.preventDefault();let q=$("q").value.trim();if(!q)return;$("r").innerHTML='<div class="card">조회 중...</div>';try{let a=await fetch("/api/stock?query="+encodeURIComponent(q)),d=await a.json();if(!a.ok)throw Error(d.error||"조회 실패");$("r").innerHTML=`<div class="card"><div class="name">${d.name||"-"}</div><div class="code">${d.code}</div><div class="price">${v(d.price,"원")}</div><div class="change">${v(d.change)} ${d.change_rate?"("+d.change_rate+"%)":""}</div><div class="grid">
-<div class="item"><div class="label">시가총액</div><div class="value">${v(d.market_cap)}</div></div><div class="item"><div class="label">PER</div><div class="value">${v(d.per)}</div></div>
-<div class="item"><div class="label">EPS</div><div class="value">${v(d.eps,"원")}</div></div><div class="item"><div class="label">PBR</div><div class="value">${v(d.pbr)}</div></div>
-<div class="item"><div class="label">BPS</div><div class="value">${v(d.bps,"원")}</div></div><div class="item"><div class="label">영업이익</div><div class="value">${v(d.operating_profit)}</div></div></div></div>`}catch(x){$("r").innerHTML='<div class="error">'+x.message+"</div>"}};
-</script></body></html>
+const fmt=(v)=>v==null||v===""?"-":v;
+const numFmt=(v)=>v==null||v===""?"-":Number(v).toLocaleString("ko-KR",{maximumFractionDigits:2});
+async function loadStock(){
+  const q=document.getElementById("q").value.trim();
+  const el=document.getElementById("result");
+  if(!q){el.innerHTML='<div class="err">종목명을 입력하세요.</div>';return;}
+  el.innerHTML='<div class="card">조회 중...</div>';
+  try{
+    const r=await fetch('/api/stock?query='+encodeURIComponent(q));
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||"조회 실패");
+    el.innerHTML=`
+      <div class="card">
+        <div class="name">${fmt(d.name)}</div>
+        <div class="code">${fmt(d.code)}</div>
+        <div class="price">${fmt(d.price)}원</div>
+        <div class="change">${fmt(d.change)}원 (${fmt(d.rate)}%)</div>
+        <div class="grid">
+          <div class="item"><div class="label">시가총액</div><div class="value">${fmt(d.market_cap)}</div></div>
+          <div class="item"><div class="label">PER</div><div class="value">${fmt(d.per)}</div></div>
+          <div class="item"><div class="label">EPS</div><div class="value">${fmt(d.eps)}</div></div>
+          <div class="item"><div class="label">PBR</div><div class="value">${fmt(d.pbr)}</div></div>
+          <div class="item"><div class="label">BPS</div><div class="value">${fmt(d.bps)}</div></div>
+          <div class="item"><div class="label">영업이익</div><div class="value">${fmt(d.operating_profit)}억원</div></div>
+          <div class="item multi"><div class="label">멀티플 (시가총액 ÷ 영업이익)</div><div class="value">${d.multiple==null?"-":numFmt(d.multiple)+"배"}</div></div>
+        </div>
+        <div class="note">멀티플은 현재 시가총액을 조회된 최신 연간 영업이익으로 나눈 값입니다. 영업이익이 0 이하이거나 없으면 계산하지 않습니다.</div>
+      </div>`;
+  }catch(e){
+    el.innerHTML='<div class="err">'+e.message+'</div>';
+  }
+}
+document.getElementById("q").addEventListener("keydown",e=>{if(e.key==="Enter")loadStock()});
+loadStock();
+</script>
+</body>
+</html>
