@@ -1,0 +1,14 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>국내주식 조회</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:#17191c}.wrap{max-width:700px;margin:auto;padding:24px 15px 40px}h1{font-size:25px;margin:4px 0 6px}.sub{font-size:14px;color:#777;margin-bottom:18px}.search{display:flex;gap:8px}input{flex:1;min-width:0;border:1px solid #ddd;border-radius:12px;padding:14px;font-size:16px;background:#fff}button{border:0;border-radius:12px;background:#111;color:#fff;font-weight:700;padding:0 18px;font-size:16px}.card{background:#fff;border-radius:18px;padding:20px;margin-top:16px;box-shadow:0 3px 14px #0000000d}.name{font-size:21px;font-weight:800}.code{color:#888;font-size:13px;margin-top:3px}.price{font-size:30px;font-weight:800;margin-top:18px}.change{font-size:14px;color:#666;margin-top:4px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.item{background:#f7f8fa;border-radius:12px;padding:14px}.label{font-size:13px;color:#777;margin-bottom:7px}.value{font-size:17px;font-weight:700;word-break:break-word}.error{margin-top:15px;background:#fff0f2;color:#a00020;border-radius:12px;padding:14px;font-size:14px}
+</style></head><body><div class="wrap"><h1>국내주식 종목 조회</h1><div class="sub">종목명 또는 6자리 종목코드를 입력하세요.</div>
+<form class="search" id="f"><input id="q" placeholder="예: 삼성전자 또는 005930"><button>조회</button></form><div id="r"></div></div>
+<script>
+const $=x=>document.getElementById(x),v=(x,s="")=>(x===null||x===undefined||x==="")?"-":x+s;
+$("f").onsubmit=async e=>{e.preventDefault();let q=$("q").value.trim();if(!q)return;$("r").innerHTML='<div class="card">조회 중...</div>';try{let a=await fetch("/api/stock?query="+encodeURIComponent(q)),d=await a.json();if(!a.ok)throw Error(d.error||"조회 실패");$("r").innerHTML=`<div class="card"><div class="name">${d.name||"-"}</div><div class="code">${d.code}</div><div class="price">${v(d.price,"원")}</div><div class="change">${v(d.change)} ${d.change_rate?"("+d.change_rate+"%)":""}</div><div class="grid">
+<div class="item"><div class="label">시가총액</div><div class="value">${v(d.market_cap)}</div></div><div class="item"><div class="label">PER</div><div class="value">${v(d.per)}</div></div>
+<div class="item"><div class="label">EPS</div><div class="value">${v(d.eps,"원")}</div></div><div class="item"><div class="label">PBR</div><div class="value">${v(d.pbr)}</div></div>
+<div class="item"><div class="label">BPS</div><div class="value">${v(d.bps,"원")}</div></div><div class="item"><div class="label">영업이익</div><div class="value">${v(d.operating_profit)}</div></div></div></div>`}catch(x){$("r").innerHTML='<div class="error">'+x.message+"</div>"}};
+</script></body></html>
